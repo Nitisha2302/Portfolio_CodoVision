@@ -423,14 +423,16 @@
     sheet.innerHTML = `
       <div class="book-cover book-cover--front">
         <div class="cover-copy-block">
-          <p class="cover-brand-sm">codovision</p>
+          <div class="cover-brand-row">
+            <img class="cover-logo" src="assets/logo.png" alt="" width="40" height="40" draggable="false" />
+            <p class="cover-brand-sm">codovision</p>
+          </div>
           <h1 class="cover-stack-title">
             <span>PORTFOLIO</span>
             <span>&amp; PAST</span>
             <span>WORK</span>
           </h1>
           <p class="cover-author-line">CODOVISION</p>
-          <p class="cover-sub-line">A reference for the lead generation and bidding team</p>
         </div>
         <div class="cover-art-panel" aria-hidden="true">
           <img src="assets/covers/front-art.png" alt="" draggable="false" />
@@ -468,8 +470,7 @@
             <img src="assets/logo.png" alt="" width="40" height="40" />
             <div>
               <strong>codovision</strong>
-              <span>codovision.tech</span>
-            </div>
+              <a class="book-cover-site" href="https://codovision.tech/" target="_blank" rel="noopener noreferrer" data-store-link>codovision.tech</a>            </div>
           </div>
         </footer>
       </div>
@@ -478,7 +479,7 @@
   }
 
   /** One landscape mockup → left leaf + right leaf (full image across open book) */
-  function createHalfPage(src, side, leafIndex, title) {
+  function createHalfPage(src, side, leafIndex, title, pageMeta) {
     const sheet = document.createElement("div");
     sheet.className = `flip-page flip-page--${side}`;
     const face = document.createElement("div");
@@ -503,12 +504,15 @@
 
     face.appendChild(fold);
     face.appendChild(footer);
+    if (side === "right" && pageMeta?.links?.length) {
+      face.appendChild(createStoreHotspots(pageMeta, "half"));
+    }
     sheet.appendChild(face);
     return sheet;
   }
 
   /** Compact: one full landscape mockup per flip */
-  function createFullPage(src, leafIndex, title) {
+  function createFullPage(src, leafIndex, title, pageMeta) {
     const sheet = document.createElement("div");
     sheet.className = "flip-page flip-page--full";
     const face = document.createElement("div");
@@ -523,8 +527,79 @@
     footer.textContent = `${title}`;
 
     face.appendChild(footer);
+    if (pageMeta?.links?.length) {
+      face.appendChild(createStoreHotspots(pageMeta, "full"));
+    }
     sheet.appendChild(face);
     return sheet;
+  }
+
+  function createStoreHotspots(pageMeta, mode) {
+    const links = pageMeta.links || [];
+    const layout = pageMeta.linkLayout === "row" ? "row" : "stack";
+    const region = pageMeta.linkRegion === "cover-bottom" ? "cover-bottom" : "panel";
+    const wrap = document.createElement("div");
+    wrap.className = `store-hotspots store-hotspots--${mode} store-hotspots--${layout} store-hotspots--${region} store-hotspots--n${links.length}`;
+    wrap.setAttribute("aria-label", "Store and website links");
+    const box =
+      mode === "full"
+        ? pageMeta.linkBoxFull || pageMeta.linkBox
+        : pageMeta.linkBox;
+    if (box) {
+      if (box.top != null) wrap.style.top = box.top;
+      if (box.left != null) wrap.style.left = box.left;
+      if (box.width != null) wrap.style.width = box.width;
+      if (box.height != null) wrap.style.height = box.height;
+      if (box.bottom != null) {
+        wrap.style.top = "auto";
+        wrap.style.bottom = box.bottom;
+      }
+      if (box.right != null) wrap.style.right = box.right;
+    }
+    links.forEach((link) => {
+      const a = document.createElement("a");
+      a.className = `store-hotspot store-hotspot--${link.kind || "link"}`;
+      a.href = link.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.title = `Open ${link.label || "link"}`;
+      a.setAttribute("aria-label", link.label || "Open link");
+      a.innerHTML = `<span class="store-hotspot-label">${link.label || "Open"}</span>`;
+      const openLink = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") {
+          e.stopImmediatePropagation();
+        }
+        window.open(link.href, "_blank", "noopener,noreferrer");
+      };
+      ["pointerdown", "mousedown", "mouseup", "touchstart", "touchend"].forEach(
+        (evt) => {
+          a.addEventListener(
+            evt,
+            (e) => {
+              e.stopPropagation();
+              if (typeof e.stopImmediatePropagation === "function") {
+                e.stopImmediatePropagation();
+              }
+            },
+            { passive: false, capture: true }
+          );
+        }
+      );
+      a.addEventListener("click", openLink, { capture: true });
+      wrap.appendChild(a);
+    });
+    ["pointerdown", "mousedown", "click", "touchstart"].forEach((evt) => {
+      wrap.addEventListener(
+        evt,
+        (e) => {
+          e.stopPropagation();
+        },
+        { capture: true }
+      );
+    });
+    return wrap;
   }
 
   function buildHtmlPages() {
@@ -533,7 +608,7 @@
       pages.forEach((page, spreadIndex) => {
         const src = page.src || page.hero;
         const title = page.title || "Portfolio";
-        nodes.push(createFullPage(src, spreadIndex + 1, title));
+        nodes.push(createFullPage(src, spreadIndex + 1, title, page));
       });
     } else {
       pages.forEach((page, spreadIndex) => {
@@ -541,8 +616,8 @@
         const title = page.title || "Portfolio";
         const leftLeaf = 1 + spreadIndex * 2;
         const rightLeaf = leftLeaf + 1;
-        nodes.push(createHalfPage(src, "left", leftLeaf, title));
-        nodes.push(createHalfPage(src, "right", rightLeaf, title));
+        nodes.push(createHalfPage(src, "left", leftLeaf, title, page));
+        nodes.push(createHalfPage(src, "right", rightLeaf, title, page));
       });
     }
     nodes.push(createEndCover());
@@ -621,7 +696,7 @@
       showCover: !compact,
       mobileScrollSupport: true,
       swipeDistance: compact ? 22 : 28,
-      clickEventForward: false,
+      clickEventForward: true,
       useMouseEvents: true,
       showPageCorners: !compact,
       disableFlipByClick: false,
@@ -630,6 +705,32 @@
     pageFlip.loadFromHTML(htmlPages);
     lastPageIndex = pageFlip.getCurrentPageIndex();
 
+    // Links inside pages must not trigger page flips
+    els.book.querySelectorAll("a.store-hotspot[href], a.book-cover-site[href]").forEach((node) => {
+      const href = node.getAttribute("href");
+      if (!href) return;
+      const openLink = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === "function") {
+          e.stopImmediatePropagation();
+        }
+        window.open(href, "_blank", "noopener,noreferrer");
+      };
+      ["pointerdown", "mousedown", "touchstart"].forEach((evt) => {
+        node.addEventListener(
+          evt,
+          (e) => {
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === "function") {
+              e.stopImmediatePropagation();
+            }
+          },
+          { capture: true }
+        );
+      });
+      node.addEventListener("click", openLink, { capture: true });
+    });
     /**
      * Back-curl fix only needed in single-page portrait mode.
      * Open landscape book uses native reverse flip.

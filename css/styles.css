@@ -403,8 +403,24 @@ body.is-immersive .spread-badge {
   background: #0b1d35;
 }
 
-.cover-brand-sm {
+
+.cover-brand-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2cqw, 12px);
   margin: 0 0 6px;
+}
+.cover-logo {
+  width: clamp(28px, 8cqw, 40px);
+  height: clamp(28px, 8cqw, 40px);
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.cover-brand-sm {
+  margin: 0;
   font-family: var(--display);
   font-size: clamp(0.68rem, 3.2cqw, 0.88rem);
   font-weight: 600;
@@ -412,6 +428,15 @@ body.is-immersive .spread-badge {
   text-transform: lowercase;
   color: rgba(255, 255, 255, 0.92);
 }
+/* .cover-brand-sm {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: clamp(0.68rem, 3.2cqw, 0.88rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.92);
+} */
 
 .cover-stack-title {
   margin: 0;
@@ -840,14 +865,28 @@ body.is-immersive .spread-badge {
   letter-spacing: 0.04em;
   text-transform: lowercase;
 }
-
-.book-cover-mark span {
+.book-cover-mark span,
+.book-cover-site {
   display: block;
   margin-top: 2px;
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.02em;
+  text-decoration: none;
 }
+.book-cover-site:hover,
+.book-cover-site:focus-visible {
+  color: #6ec8ff;
+  text-decoration: underline;
+}
+
+/* .book-cover-mark span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+} */
 
 .flipbook .flip-page--hard {
   background: #0b1d35;
@@ -898,6 +937,96 @@ body.is-end .page-meta {
   height: 100%;
   background-size: 200% 100%;
   background-repeat: no-repeat;
+}
+
+/* Clickable App Store / Play Store / Website overlays on right panel */
+.store-hotspots {
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  pointer-events: auto !important;
+}
+.store-hotspots--stack {
+  flex-direction: column;
+}
+.store-hotspots--row {
+  flex-direction: row;
+}
+/* Right leaf of open book (desktop) */
+.store-hotspots--half.store-hotspots--panel {
+  left: 4%;
+  top: 16%;
+  width: 78%;
+  height: 22%;
+}
+.store-hotspots--half.store-hotspots--panel.store-hotspots--n1 {
+  height: 10%;
+}
+.store-hotspots--half.store-hotspots--panel.store-hotspots--n2 {
+  height: 28%;
+}
+.store-hotspots--half.store-hotspots--panel.store-hotspots--n3 {
+  height: 34%;
+}
+.store-hotspots--half.store-hotspots--cover-bottom {
+  left: 6%;
+  top: auto;
+  bottom: 7%;
+  width: 70%;
+  height: 14%;
+}
+/* Full landscape page (phone / tablet) */
+.store-hotspots--full.store-hotspots--panel {
+  left: 52%;
+  top: 16%;
+  width: 42%;
+  height: 22%;
+}
+.store-hotspots--full.store-hotspots--panel.store-hotspots--n1 {
+  height: 10%;
+}
+.store-hotspots--full.store-hotspots--panel.store-hotspots--n2 {
+  height: 28%;
+}
+.store-hotspots--full.store-hotspots--panel.store-hotspots--n3 {
+  height: 34%;
+}
+.store-hotspots--full.store-hotspots--cover-bottom {
+  left: 55%;
+  top: auto;
+  bottom: 7%;
+  width: 38%;
+  height: 14%;
+}
+.store-hotspot {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  background: transparent;
+  outline: none;
+  pointer-events:auto !important;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 13;
+}
+.store-hotspot:hover,
+.store-hotspot:focus-visible {
+ background: transparent;
+  outline: none;
+}
+.store-hotspot-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .static-spread-left {
