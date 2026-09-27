@@ -21,6 +21,9 @@
     tocBtn: document.getElementById("tocBtn"),
     tocClose: document.getElementById("tocClose"),
     fullscreenBtn: document.getElementById("fullscreenBtn"),
+    pageJumpForm: document.getElementById("pageJumpForm"),
+    pageJumpInput: document.getElementById("pageJumpInput"),
+    pageJumpTotal: document.getElementById("pageJumpTotal"),
   };
 
   /** A4 portrait leaf (mm ratio). Open book ≈ √2 landscape. */
@@ -254,6 +257,16 @@
 
     els.slider.max = String(VIEW_COUNT);
     els.slider.value = String(info.view + 1);
+    if (els.pageJumpInput) {
+      els.pageJumpInput.max = String(VIEW_COUNT);
+      // Don't overwrite while the user is typing in the field
+      if (document.activeElement !== els.pageJumpInput) {
+        els.pageJumpInput.value = String(info.view + 1);
+      }
+    }
+    if (els.pageJumpTotal) {
+      els.pageJumpTotal.textContent = String(VIEW_COUNT);
+    }
     els.prev.disabled = info.view <= 0;
     els.next.disabled = false;
     els.next.title =
@@ -470,7 +483,8 @@
             <img src="assets/logo.png" alt="" width="40" height="40" />
             <div>
               <strong>codovision</strong>
-              <a class="book-cover-site" href="https://codovision.tech/" target="_blank" rel="noopener noreferrer" data-store-link>codovision.tech</a>            </div>
+              <a class="book-cover-site" href="https://codovision.tech/" target="_blank" rel="noopener noreferrer" data-store-link>codovision.tech</a>
+            </div>
           </div>
         </footer>
       </div>
@@ -541,6 +555,7 @@
     const wrap = document.createElement("div");
     wrap.className = `store-hotspots store-hotspots--${mode} store-hotspots--${layout} store-hotspots--${region} store-hotspots--n${links.length}`;
     wrap.setAttribute("aria-label", "Store and website links");
+
     const box =
       mode === "full"
         ? pageMeta.linkBoxFull || pageMeta.linkBox
@@ -556,6 +571,7 @@
       }
       if (box.right != null) wrap.style.right = box.right;
     }
+
     links.forEach((link) => {
       const a = document.createElement("a");
       a.className = `store-hotspot store-hotspot--${link.kind || "link"}`;
@@ -565,6 +581,7 @@
       a.title = `Open ${link.label || "link"}`;
       a.setAttribute("aria-label", link.label || "Open link");
       a.innerHTML = `<span class="store-hotspot-label">${link.label || "Open"}</span>`;
+
       const openLink = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -573,6 +590,7 @@
         }
         window.open(link.href, "_blank", "noopener,noreferrer");
       };
+
       ["pointerdown", "mousedown", "mouseup", "touchstart", "touchend"].forEach(
         (evt) => {
           a.addEventListener(
@@ -588,8 +606,10 @@
         }
       );
       a.addEventListener("click", openLink, { capture: true });
+
       wrap.appendChild(a);
     });
+
     ["pointerdown", "mousedown", "click", "touchstart"].forEach((evt) => {
       wrap.addEventListener(
         evt,
@@ -599,6 +619,7 @@
         { capture: true }
       );
     });
+
     return wrap;
   }
 
@@ -705,7 +726,7 @@
     pageFlip.loadFromHTML(htmlPages);
     lastPageIndex = pageFlip.getCurrentPageIndex();
 
-    // Links inside pages must not trigger page flips
+    // Re-bind after PageFlip adopts nodes (listeners can be dropped/cloned)
     els.book.querySelectorAll("a.store-hotspot[href], a.book-cover-site[href]").forEach((node) => {
       const href = node.getAttribute("href");
       if (!href) return;
@@ -731,6 +752,7 @@
       });
       node.addEventListener("click", openLink, { capture: true });
     });
+
     /**
      * Back-curl fix only needed in single-page portrait mode.
      * Open landscape book uses native reverse flip.
@@ -1154,6 +1176,34 @@
     const view = Number(els.slider.value) - 1;
     controller?.turnToPage(leafFromView(view));
   });
+
+  function jumpToEnteredPage() {
+    if (!els.pageJumpInput) return;
+    const raw = Number(els.pageJumpInput.value);
+    if (!Number.isFinite(raw)) {
+      els.pageJumpInput.value = String(viewFromLeaf(controller?.getPage?.() || 0).view + 1);
+      return;
+    }
+    const pageNum = Math.max(1, Math.min(VIEW_COUNT, Math.round(raw)));
+    els.pageJumpInput.value = String(pageNum);
+    unlockFlipSound();
+    controller?.turnToPage(leafFromView(pageNum - 1));
+  }
+
+  els.pageJumpForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    jumpToEnteredPage();
+  });
+  els.pageJumpInput?.addEventListener("keydown", (e) => {
+    // Avoid book arrow-key handlers while typing a page number
+    e.stopPropagation();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      jumpToEnteredPage();
+    }
+  });
+  els.pageJumpInput?.addEventListener("change", jumpToEnteredPage);
+
   els.tocBtn.addEventListener("click", openToc);
   els.tocClose.addEventListener("click", closeToc);
   els.toc.addEventListener("click", (e) => {
